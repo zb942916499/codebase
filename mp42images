@@ -35,3 +35,34 @@ for filename in os.listdir(video_folder):
 
         # 关闭视频文件
         video.release()
+
+
+
+#或者试试这个
+import cv2
+import os
+
+def save_keyframes(input_folder, output_folder):
+    # 遍历输入文件夹下所有.avi文件
+    for filename in os.listdir(input_folder):
+        if filename.endswith(".avi"):
+            video_path = os.path.join(input_folder, filename)
+            vidcap = cv2.VideoCapture(video_path)
+            success,image = vidcap.read()
+            count = 0
+            success = True
+            while success:
+                # 每隔一定帧数保存一张关键帧
+                if count % 30 == 0:
+                    keyframe_path = os.path.join(output_folder, f"{os.path.splitext(filename)[0]}_frame{count}.jpg")
+                    cv2.imwrite(keyframe_path, image)     # 保存关键帧
+                success,image = vidcap.read()
+                count += 1
+
+if __name__ == "__main__":
+    input_folder = "G:/test_temple"
+    output_folder = "G:/test_temple_result"
+    save_keyframes(input_folder, output_folder)
+
+
+

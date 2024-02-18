@@ -1,0 +1,131 @@
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+import bezier
+import tkinter as tk
+from tkinter import filedialog
+# 处理路的GPS
+import scipy
+
+def replace_last_directory(path, new_directory):
+    # 获取文件夹路径的父目录和最后一级目录名
+    parent_dir, last_dir = os.path.split(path)
+    # 构建新的路径，替换最后一级目录名
+    new_path = os.path.join(parent_dir, new_directory)
+    return new_path
+
+
+def main():
+    # 实例化
+    root = tk.Tk()
+    root.withdraw()
+    # 获取文件夹路径
+    road_dir = filedialog.askdirectory()
+    # print('获取的文件地址：', road_dir)
+    save_dir = replace_last_directory(road_dir,"data_save")
+    # print('保存的文件地址：', save_dir)
+
+    # road_dir = r'E:\dect_car_data\000001_230725110517\oxts\data'
+    # road_dir = r"D:\qt_project\build-DataAcqSystemSoft-Desktop_Qt_5_12_12_MSVC2017_64bit-Debug\debug\000001_240109164550\oxts\data"
+    # save_dir = r'E:\dect_car_data\000001_230725110517\oxts\data_save'
+    # save_dir = r"D:\qt_project\build-DataAcqSystemSoft-Desktop_Qt_5_12_12_MSVC2017_64bit-Debug\debug\000001_240109164550\oxts\data_save"
+    road_list = os.listdir(road_dir)
+    # print(road_list)
+    x_base = 34
+    y_base = 108
+    height_base = 400
+    road_GPSinfo_x_list = []
+    road_GPSinfo_y_list = []
+    road_GPSinfo_z_list = []
+    for road_file in road_list:
+        road_file_path = road_dir + '\\' + road_file
+        #打开文件
+        with open(road_file_path,encoding='utf-8') as f:
+            #读取文件
+            road_GPSinfo = f.read()
+            x = road_GPSinfo.split(',')[0].split(' ')[0]
+            y = road_GPSinfo.split(',')[0].split(' ')[1]
+            height = road_GPSinfo.split(',')[0].split(' ')[2]
+            if(float(height)<20 or float(x)>100 or float(y)>200 or float(x)<10 or float(y)<10):
+                try:
+                    x = road_GPSinfo_x_list[len(road_GPSinfo_x_list)-1]
+                    y = road_GPSinfo_y_list[len(road_GPSinfo_y_list)-1]
+                    height = road_GPSinfo_z_list[len(road_GPSinfo_z_list)-1]
+                except:
+                    x = x_base
+                    y = y_base
+                    height = height_base
+                    continue
+            road_GPSinfo_z_list.append(float(height))
+            road_GPSinfo_y_list.append(float(y))
+            road_GPSinfo_x_list.append(float(x))
+            # road_GPSinfo_x_list.append(float(cout))
+
+    # print(len(road_GPSinfo_z_list))
+    height_smooth = scipy.signal.savgol_filter(road_GPSinfo_z_list,100,1)
+    x_smooth,y_smooth = scipy.signal.savgol_filter((road_GPSinfo_x_list,road_GPSinfo_y_list),10,1)
+    # y_smooth = scipy.signal.savgol_filter(road_GPSinfo_y_list,15,1)
+    # y_smooth = scipy.filter_bp(road_GPSinfo_x_list,1000,300,400)
+
+    a = np.array([x_smooth,y_smooth])
+    curve = bezier.Curve(a, degree=len(x_smooth)-1)
+    # print(curve)
+    s_vals = np.linspace(0.0, 1.0, len(x_smooth))
+    data = curve.evaluate_multi(s_vals)
+    x33 = data[0]
+    y33 = data[1]
+    plt.plot(road_GPSinfo_y_list,road_GPSinfo_x_list,linewidth=2.0, linestyle="dotted", label="true")
+    plt.plot(y33, x33, 'y', linewidth=2.0, linestyle="dotted", label="filtered")
+    plt.legend()
+    plt.show()
+
+    # save_file_path_all = save_dir + '\\filterData.txt'
+    parentdir,lastdir = os.path.split(save_dir)
+
+    save_file_path_all = replace_last_directory(parentdir,"filterData.txt")
+    cout = 0
+    for road_file in road_list:
+        road_file_path = road_dir + '\\' + road_file
+        save_file_path = save_dir + '\\' + road_file
+        #打开文件
+        with open(road_file_path,encoding='utf-8') as f:
+            #读取文件
+            road_GPSinfo = f.read()
+            x = x33[cout]
+            y = y33[cout]
+            height = height_smooth[cout]
+            with open(save_file_path,'w',encoding='utf-8') as f1:
+                # print(road_GPSinfo)
+                # writelinef = str(x)+" "+str(y) +" " +str(height)+" "+ road_GPSinfo.split(' ')[3]+" "+ road_GPSinfo.split(' ')[4]+" "+ road_GPSinfo.split(' ')[5]+" "+ road_GPSinfo.split(' ')[6]+" "+ road_GPSinfo.split(' ')[7]+" "+ road_GPSinfo.split(' ')[8]
+                writelinef = str(x) + " " + str(y) + " " + str(height)
+                f1.writelines(writelinef)
+            # road_GPSinfo_x_list.append(float(cout))
+
+            try:
+                # print(save_file_path_all)
+                with open(save_file_path_all,"a+",encoding='utf-8') as f2:
+                    # writelinef2 = str(x)+" "+str(y) +" " +str(height)+" "+ road_GPSinfo.split(' ')[3]+" "+ road_GPSinfo.split(' ')[4]+" "+ road_GPSinfo.split(' ')[5]+" "+ road_GPSinfo.split(' ')[6]+" "+ road_GPSinfo.split(' ')[7]+" "+ road_GPSinfo.split(' ')[8]
+                    writelinef2 = str(x) + " " + str(y) + " " + str(height) + "\n"
+                    f2.writelines(writelinef2)
+            except FileNotFoundError:
+                with open(save_file_path_all, 'w') as f2:
+                    # writelinef2 = str(x)+" "+str(y) +" " +str(height)+" "+ road_GPSinfo.split(' ')[3]+" "+ road_GPSinfo.split(' ')[4]+" "+ road_GPSinfo.split(' ')[5]+" "+ road_GPSinfo.split(' ')[6]+" "+ road_GPSinfo.split(' ')[7]+" "+ road_GPSinfo.split(' ')[8]
+                    writelinef2 = str(x) + " " + str(y) + " " + str(height) + "\n"
+                    f2.writelines(writelinef2)
+
+        cout = cout+1
+        if(cout==len(x_smooth)):
+            break
+
+    plt.scatter(range(0,len(road_GPSinfo_z_list)), road_GPSinfo_z_list, s=1, c='green', label='height', marker='.')
+    plt.scatter(range(0,len(height_smooth)), height_smooth, s=1, c='red', label='road', marker='.')
+    plt.scatter(range(0,len(road_GPSinfo_x_list)), road_GPSinfo_x_list, s=1, c='green', label='x', marker='.')
+    plt.scatter(range(0,len(x_smooth)), x_smooth, s=1, c='red', label='road', marker='.')
+    plt.scatter(range(0,len(road_GPSinfo_y_list)), road_GPSinfo_y_list, s=1, c='green', label='y', marker='.')
+    plt.scatter(range(0,len(y_smooth)), y_smooth, s=1, c='red', label='road', marker='.')
+    plt.legend()
+    plt.show()
+    print(parentdir)
+
+if __name__ == '__main__':
+    main()

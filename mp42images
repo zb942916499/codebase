@@ -1,0 +1,37 @@
+import os
+import random
+import cv2
+
+# 视频文件夹路径
+video_folder = 'E:/d2city/'
+
+# 输出文件夹路径
+output_folder = 'D:/Backup/Downloads/TACO/data/tietu/ditu/'
+
+# 遍历视频文件夹中的所有文件
+i = 0
+for filename in os.listdir(video_folder):
+    print(filename)
+    if filename.endswith('.mp4') or filename.endswith('.avi'):
+        video_path = os.path.join(video_folder, filename)
+
+        # 打开视频文件
+        video = cv2.VideoCapture(video_path)
+
+        # 获取视频的总帧数
+        total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+
+        # 随机选择几帧
+        frames_to_extract = random.sample(range(total_frames), k=2)
+
+        # 读取选定的帧并保存为图片
+        for frame_number in frames_to_extract:
+            video.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+            success, frame = video.read()
+            if success:
+                output_path = os.path.join(output_folder, f'{i:08}.jpg')
+                cv2.imwrite(output_path, frame)
+                i = i + 1
+
+        # 关闭视频文件
+        video.release()

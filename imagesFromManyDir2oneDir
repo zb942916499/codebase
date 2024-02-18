@@ -1,0 +1,43 @@
+import os
+import random
+import shutil
+
+def random_select_files(src_folder, num_files):
+    file_list = []
+    for root, dirs, files in os.walk(src_folder):
+        for file in files:
+            file_list.append(os.path.join(root, file))
+    if num_files > len(file_list):
+        num_files = len(file_list)
+    selected_files = random.sample(file_list, num_files)
+    return selected_files
+
+def copy_files_with_time_naming(src_folder, dst_folder):
+    for folder_name, subfolders, filenames in os.walk(src_folder):
+        for filename in filenames:
+            src_path = os.path.join(folder_name, filename)
+            dst_file_name = os.path.getmtime(src_path)
+            dst_path = os.path.join(dst_folder, str(dst_file_name) + ".jpg")
+            shutil.copyfile(src_path, dst_path)
+
+current_dir = 'D:/Backup/Downloads/TACO/data/tianqi_data/2024年2月2日152314行车记录仪导出帧/'
+target_folder = os.path.join(current_dir, "copied_files")
+num_files = 500
+
+if not os.path.exists(target_folder):
+    os.makedirs(target_folder)
+
+selected_files = random_select_files(current_dir, num_files)
+
+for file_path in selected_files:
+    file_name = os.path.basename(file_path)
+    dst_file_name = os.path.getmtime(file_path)
+    dst_path = os.path.join(target_folder, str(dst_file_name) + ".jpg")
+    shutil.copyfile(file_path, dst_path)
+
+
+
+
+
+
+

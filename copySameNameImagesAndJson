@@ -1,0 +1,23 @@
+import os
+import shutil
+
+folder_a = r'G:\barrier_data\jianceche_data\JPEGImages'
+folder_b = r'G:\barrier_data\jianceche_data\json_test0'
+
+# 获取文件夹 A 中的文件名列表
+files_a = os.listdir(folder_a)
+
+# 获取文件夹 B 中的文件名列表
+files_b = os.listdir(folder_b)
+
+# 遍历文件夹 A 中的文件
+for file_a in files_a:
+    # 检查是否存在相同文件名但后缀不同的文件
+    file_name, file_ext = os.path.splitext(file_a)
+    for file_b in files_b:
+        if file_name == os.path.splitext(file_b)[0] and file_ext != os.path.splitext(file_b)[1]:
+            # 复制文件到文件夹 B 中
+            src_path = os.path.join(folder_a, file_a)
+            dst_path = os.path.join(folder_b, file_a)
+            shutil.copy(src_path, dst_path)
+            print(f'Copied {file_a} to folder B.')
